@@ -1,0 +1,38 @@
+App As appinfo:
+    BackEnabled: =false
+    OnStart: |
+        =Set(ArkDarkGreen, RGBA(17, 103, 177, 1));
+        Set(ArkGreen,RGBA(189, 195, 199, 1));
+        ClearCollect(Loop,
+        {Index:1},
+        {Index:2},
+        {Index:3},
+        {Index:4},
+        {Index:5},
+        {Index:6},
+        {Index:7},
+        {Index:8},
+        {Index:9},
+        {Index:10}
+        );
+        ClearCollect(LoopRows,
+        {Index:1},
+        {Index:2},
+        {Index:3},
+        {Index:4},
+        {Index:5}
+        );
+        ClearCollect(SelectRows,
+        {Index:3},
+        {Index:4},
+        {Index:5}
+        );
+        ClearCollect(SelectColumns,
+        {Index:5},
+        {Index:6},
+        {Index:7},
+        {Index:8},
+        {Index:9},
+        {Index:10}
+        )
+

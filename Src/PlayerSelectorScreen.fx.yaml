@@ -1,0 +1,96 @@
+PlayerSelectorScreen As screen:
+    Fill: =ArkGreen
+
+    TitleLabel As label:
+        Align: =Align.Center
+        Color: =ArkDarkGreen
+        Fill: =RGBA(23, 30, 71, 0)
+        FontWeight: =FontWeight.Bold
+        Height: =68
+        Size: =40
+        Text: ="POWER ARKANOID"
+        Width: =610
+        X: =349
+        Y: =23
+        ZIndex: =2
+
+    PlayerTextInput As text:
+        BorderColor: =ArkDarkGreen
+        BorderThickness: =5
+        Color: =ArkDarkGreen
+        Default: =""
+        Height: =71
+        HintText: ="Nombre del jugador..."
+        HoverBorderColor: =ArkDarkGreen
+        HoverColor: =RGBA(51, 51, 51, 1)
+        HoverFill: =ArkDarkGreen
+        RadiusBottomLeft: =110
+        RadiusBottomRight: =110
+        RadiusTopLeft: =110
+        RadiusTopRight: =110
+        Size: =20
+        Width: =522
+        X: =393
+        Y: =141
+        ZIndex: =3
+
+    PlayButton As button:
+        Fill: =ArkDarkGreen
+        Height: =91
+        HoverFill: =ColorFade(ArkDarkGreen, -20%)
+        OnSelect: |-
+            =If (Not(IsBlank(PlayerTextInput.Text)),
+                Set(PlayerName,PlayerTextInput.Text);Navigate(GameScreen),
+                Notify("Introduce el nombre del jugador", NotificationType.Error)
+            )
+        Text: ="JUGAR"
+        X: =574
+        Y: =505
+        ZIndex: =4
+
+    RowsNum As dropdown:
+        BorderColor: =ArkDarkGreen
+        BorderThickness: =5
+        ChevronBackground: =ArkDarkGreen
+        ChevronHoverBackground: =ColorFade(ArkDarkGreen, -20%)
+        Height: =53
+        Items: =SelectRows
+        SelectionFill: =ArkDarkGreen
+        Size: =20
+        Width: =356
+        X: =559
+        Y: =244
+        ZIndex: =5
+
+    ColumnsNum As dropdown:
+        BorderColor: =ArkDarkGreen
+        BorderThickness: =5
+        ChevronBackground: =ArkDarkGreen
+        ChevronHoverBackground: =ColorFade(ArkDarkGreen, -20%)
+        Height: =53
+        Items: =SelectColumns
+        SelectionFill: =ArkDarkGreen
+        Size: =20
+        Width: =356
+        X: =559
+        Y: =347
+        ZIndex: =6
+
+    RowsLabel As label:
+        Color: =ArkDarkGreen
+        FontWeight: =FontWeight.Semibold
+        Size: =20
+        Text: ="Filas"
+        X: =393
+        Y: =250
+        ZIndex: =7
+
+    ColumnsLabel As label:
+        Color: =ArkDarkGreen
+        FontWeight: =FontWeight.Semibold
+        Size: =20
+        Text: ="Columnas"
+        X: =393
+        Y: =353
+        ZIndex: =8
+

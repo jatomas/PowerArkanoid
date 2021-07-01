@@ -1,0 +1,1215 @@
+GameScreen As screen:
+    Fill: =ArkGreen
+    OnVisible: =Select(RestartVariablesButton)
+
+    Board As rectangle:
+        BorderColor: =ArkDarkGreen
+        Fill: =ArkDarkGreen
+        Height: =641
+        Width: =1090
+        X: =137
+        Y: =104
+        ZIndex: =1
+
+    TitleLabel_1 As label:
+        Align: =Align.Center
+        Color: =ArkDarkGreen
+        FontWeight: =FontWeight.Bold
+        Height: =68
+        Size: =40
+        Text: ="POWER ARKANOID"
+        Width: =610
+        X: =377
+        Y: =6
+        ZIndex: =2
+
+    Player As image:
+        Height: =32
+        Image: =player
+        Width: =150
+        X: =PlayerX
+        Y: =PlayerY
+        ZIndex: =3
+
+    RightButton As button:
+        Fill: =ArkDarkGreen
+        Height: =100
+        HoverFill: =ColorFade(ArkDarkGreen, -20%)
+        OnSelect: =
+        RadiusBottomLeft: =50
+        RadiusBottomRight: =50
+        RadiusTopLeft: =50
+        RadiusTopRight: =50
+        Text: ="Der."
+        Width: =100
+        X: =1250
+        Y: =639
+        ZIndex: =4
+
+    LeftButton As button:
+        Fill: =ArkDarkGreen
+        Height: =100
+        HoverFill: =ColorFade(ArkDarkGreen, -20%)
+        OnSelect: =
+        RadiusBottomLeft: =50
+        RadiusBottomRight: =50
+        RadiusTopLeft: =50
+        RadiusTopRight: =50
+        Text: ="Izq."
+        Width: =100
+        X: =14
+        Y: =639
+        ZIndex: =5
+
+    PayerTimer As timer:
+        AutoStart: =true
+        Duration: =1
+        OnTimerStart: |-
+            =If(
+                LeftButton.Pressed,
+                If(
+                    PlayerX - Movement > Board.X,
+                    Set(
+                        PlayerX,
+                        PlayerX - Movement
+                    )
+                );
+                If(
+                    BallDirX = "P",
+                    Set(
+                        BallDirX,
+                        "I"
+                    )
+                ),
+                RightButton.Pressed,
+                If(
+                    (PlayerX + Movement + Player.Width) < (Board.X + Board.Width),
+                    Set(
+                        PlayerX,
+                        PlayerX + Movement
+                    )
+                );
+                If(
+                    BallDirX = "P",
+                    Set(
+                        BallDirX,
+                        "D"
+                    )
+                )
+            );
+            If(
+                (LeftButton.Pressed || RightButton.Pressed) && (MovementX = 0 || MovementY = 0),
+                Set(
+                    MovementX,
+                    10
+                );
+                Set(
+                    MovementY,
+                    10
+                );
+                If( Not(StartBallTimer), Set(StartBallTimer, true));
+            )
+        Repeat: =true
+        Visible: |
+            =false
+        Y: =6
+        ZIndex: =6
+
+    BallTimer As timer:
+        Duration: =1
+        OnTimerStart: |-
+            =// Calcular dirección horizontal
+            If (
+                BallDirX = "D",
+                If(
+                    (BallX + MovementX + Ball.Width) > (Board.X + Board.Width),
+                    Set(
+                        BallDirX,
+                        "I"
+                    )
+                ),
+                BallDirX = "I",
+                If(
+                    (BallX - MovementX) < (Board.X),
+                    Set(
+                        BallDirX,
+                        "D"
+                    )
+                )
+            );
+            // Calcular dirección vertical (y cambio de horizontal en función de donde golpea el player)
+            If (
+                BallDirY = "D",
+                If(
+                    // Comprobamos si hemos llegado a la posición vertical del player
+                    (BallY + MovementY + Ball.Height) > (Player.Y) &&
+                    // Si la e
+             (BallX >= Player.X - Ball.Width) && (BallX <= Player.X + Player.Width),
+                    If (
+                        BallX + (Ball.Width / 2) < Player.X + (Player.Width / 2),
+                        Set(
+                            BallDirX,
+                            "I"
+                        ),
+                        Set(
+                            BallDirX,
+                            "D"
+                        )
+                    );
+                    If (
+                        BallX + (Ball.Width / 2) < Player.X + (Player.Width / 4),
+                        Set(
+                            MovementX,
+                            15
+                        ),
+                        BallX + (Ball.Width / 2) >= Player.X + (Player.Width / 4) && BallX + (Ball.Width / 2) < Player.X + 3 * (Player.Width / 4),
+                        Set(
+                            MovementX,
+                            10
+                        ),
+                        BallX + (Ball.Width / 2) >= Player.X + 3 * (Player.Width / 4),
+                        Set(
+                            MovementX,
+                            15
+                        )
+                    );
+                    Set(
+                        BallDirY,
+                        "T"
+                    )
+                ),
+                BallDirY = "T",
+                If(
+                    (BallY - MovementY) < (Board.Y),
+                    Set(
+                        BallDirY,
+                        "D"
+                    )
+                )
+            );
+            // Comprobar si tocamos bloque por debajo
+            If (
+                BallDirY = "T",
+                If(
+                    Not(
+                        IsBlank(
+                            First(
+                                Filter(
+                                    Blocks,
+                                    Status > 0 && Y + Height - MovementY <= BallY && Y + Height + MovementY >= BallY && X - MovementX <= BallX && X + Width - MovementX >= BallX
+                                )
+                            )
+                        )
+                    ),
+                    Set(
+                        BallDirY,
+                        "D"
+                    );
+                    Set(
+                        StatusBlock,
+                        First(
+                            Filter(
+                                Blocks,
+                                Status > 0 && Y + Height - MovementY <= BallY && Y + Height + MovementY >= BallY && X - MovementX <= BallX && X + Width - MovementX >= BallX
+                            )
+                        ).Status
+                    );
+                    Patch(
+                        Blocks,
+                        First(
+                            Filter(
+                                Blocks,
+                                Status > 0 && Y + Height - MovementY <= BallY && Y + Height + MovementY >= BallY && X - MovementX <= BallX && X + Width - MovementX >= BallX
+                            )
+                        ),
+                        {Status: StatusBlock - 1}
+                    );
+                    Set(Score, Score + Points)
+                )
+            );
+            // Comprobar si tocamos bloque por arriba
+            If (
+                BallDirY = "D",
+                If(
+                    Not(
+                        IsBlank(
+                            First(
+                                Filter(
+                                    Blocks,
+                                    Status > 0 && Y - MovementY <= BallY + Ball.Height && Y + MovementY >= BallY + Ball.Height && X - MovementX <= BallX && X + Width - MovementX >= BallX
+                                )
+                            )
+                        )
+                    ),
+                    Set(
+                        BallDirY,
+                        "T"
+                    );
+                    Set(
+                        StatusBlock,
+                        First(
+                            Filter(
+                                Blocks,
+                                Status > 0 && Y - MovementY <= BallY + Ball.Height && Y + MovementY >= BallY + Ball.Height && X - MovementX <= BallX && X + Width - MovementX >= BallX
+                            )
+                        ).Status
+                    );
+                    Patch(
+                        Blocks,
+                        First(
+                            Filter(
+                                Blocks,
+                                Status > 0 && Y - MovementY <= BallY + Ball.Height && Y + Height + MovementY >= BallY + Ball.Height && X - MovementX <= BallX && X + Width - MovementX >= BallX
+                            )
+                        ),
+                        {Status: StatusBlock - 1}
+                    );
+                    Set(Score, Score + Points)
+                )
+            );
+            
+            // Comprobar si tocamos bloque por la derecha
+            If (
+                BallDirX = "I",
+                If(
+                    Not(
+                        IsBlank(
+                            First(
+                                Filter(
+                                    Blocks,
+                                    Status > 0 && X + Width - MovementX <= BallX && X + Width + MovementX >= BallX && Y - MovementY <= BallY && Y + Height - MovementY >= BallY
+                                )
+                            )
+                        )
+                    ),
+                    Set(
+                        BallDirX,
+                        "D"
+                    );
+                    Set(
+                        StatusBlock,
+                        First(
+                            Filter(
+                                Blocks,
+                                Status > 0 && X + Width - MovementX <= BallX && X + Width + MovementX >= BallX && Y - MovementY <= BallY && Y + Height - MovementY >= BallY
+                            )
+                        ).Status
+                    );
+                    Patch(
+                        Blocks,
+                        First(
+                            Filter(
+                                Blocks,
+                                Status > 0 && X + Width - MovementX <= BallX && X + Width + MovementX >= BallX && Y - MovementY <= BallY && Y + Height - MovementY >= BallY
+                            )
+                        ),
+                        {Status: StatusBlock - 1}
+                    );
+                    Set(Score, Score + Points)
+                )
+            );
+            
+            // Comprobar si tocamos bloque por la izquierda
+            If (
+                BallDirX = "D",
+                If(
+                    Not(
+                        IsBlank(
+                            First(
+                                Filter(
+                                    Blocks,
+                                    Status > 0 && X - MovementX <= BallX + Ball.Width && X + MovementX >= BallX + Ball.Width && Y - MovementY <= BallY && Y + Height - MovementY >= BallY
+                                )
+                            )
+                        )
+                    ),
+                    Set(
+                        BallDirX,
+                        "I"
+                    );
+                    Set(
+                        StatusBlock,
+                        First(
+                            Filter(
+                                Blocks,
+                                Status > 0 && X - MovementX <= BallX + Ball.Width && X + MovementX >= BallX + Ball.Width && Y - MovementY <= BallY && Y + Height - MovementY >= BallY
+                            )
+                        ).Status
+                    );
+                    Patch(
+                        Blocks,
+                        First(
+                            Filter(
+                                Blocks,
+                                Status > 0 && X - MovementX <= BallX + Ball.Width && X + MovementX >= BallX + Ball.Width && Y - MovementY <= BallY && Y + Height - MovementY >= BallY
+                            )
+                        ),
+                        {Status: StatusBlock - 1}
+                    );
+                    Set(Score, Score + Points)
+                )
+            );
+            
+            // Movimiento horizontal
+            If (
+                BallDirX = "D",
+                Set(
+                    BallX,
+                    BallX + MovementX
+                ),
+                Set(
+                    BallX,
+                    BallX - MovementX
+                )
+            );
+            //Movimiento vertical
+            If (
+                BallDirY = "D",
+                Set(
+                    BallY,
+                    BallY + MovementY
+                ),
+                Set(
+                    BallY,
+                    BallY - MovementY
+                )
+            );
+            // Finalizar timer si perdemos
+            If (
+                BallY + Ball.Height > Board.Y + Board.Height,
+                Set(
+                    StartBallTimer,
+                    false
+                );
+                Set(
+                    GameLost,
+                    true
+                )
+            );
+            // Finalizar timer si ganamos
+            If (
+                IsBlank(
+                    First(
+                        Filter(
+                            Blocks,
+                            (Status = 1 || Status = 2)
+                        )
+                    )
+                ),
+                Set(
+                    StartBallTimer,
+                    false
+                );
+                Set(
+                    GameWin,
+                    true
+                )
+            )
+        Repeat: =true
+        Start: =StartBallTimer
+        Visible: |
+            =false
+        Y: =55
+        ZIndex: =7
+
+    Popup As group:
+        Height: =5
+        Width: =5
+        X: =40
+        Y: =40
+        ZIndex: =36
+
+        PopupBackground As rectangle:
+            Fill: =RGBA(0, 0, 0, 0.49)
+            Height: =768
+            Visible: =GameWin || GameLost
+            Width: =1366
+            ZIndex: =61
+
+        PopupLabel As label:
+            Align: =Align.Center
+            Color: =RGBA(51, 51, 51, 1)
+            Fill: =RGBA(237, 237, 237, 1)
+            FontWeight: =FontWeight.Semibold
+            Height: =419
+            Size: =40
+            Text: =If( GameWin, "¡Enhorabuena fiera, has ganado la partida!", GameLost, "You suck! Tira de aquí anda!")
+            VerticalAlign: =VerticalAlign.Bottom
+            Visible: =GameWin || GameLost
+            Width: =1366
+            Y: =164
+            ZIndex: =62
+
+        Lolat4zImage As image:
+            Height: =347
+            Image: =If( GameWin, Winner, GameLost, Lose1)
+            Visible: =GameWin || GameLost
+            Width: =725
+            X: =319
+            Y: =169
+            ZIndex: =63
+
+    RestartVariablesButton As button:
+        OnSelect: |-
+            =Set(
+                PlayerX,
+                (Board.X + Board.Width / 2 - Player.Width/2)
+            );
+            Set(
+                PlayerY,
+                Board.Y + Board.Height - Player.Height
+            );
+            Set(
+                BallX,
+                (Board.X + Board.Width / 2 - Ball.Width/2)
+            );
+            Set(
+                BallY,
+                Board.Y + Board.Height - Player.Height - Ball.Height
+            );
+            Set(
+                Movement,
+                15
+            );
+            Set(
+                MovementX,
+                0
+            );
+            Set(
+                MovementY,
+                0
+            );
+            Set(
+                BallDirY,
+                "T"
+            );
+            Set(
+                BallDirX,
+                "P"
+            );
+            Set(
+                StartBallTimer,
+                false
+            );
+            Set(
+                GameWin,
+                false
+            );
+            Set(
+                GameLost,
+                false
+            );
+            Set(
+                BlockWidth,
+                Board.Width / Value(ColumnsNum.SelectedText.Value)
+            );
+            Set(
+                BlockHeight,
+                30
+            );
+            Set(
+                PopupText,
+                ""
+            );
+            Collect(
+                Iteration,
+                {
+                    Index:1
+                }
+            );
+            Clear(Iteration);
+            Collect(
+                Blocks,
+                {
+                    Id: 1,
+                    X: Board.X + (BlockWidth * 0),
+                    Y: Board.Y,
+                    Width: BlockWidth,
+                    Height: BlockHeight,
+                    Status: 2
+                }
+            );
+            Clear(Blocks);
+            ForAll(
+                Filter(
+                    LoopRows,
+                    Index <= Value(RowsNum.SelectedText.Value)
+                ),
+                Collect(
+                    Iteration,
+                    {
+                        Index:1
+                    }
+                );
+                ForAll(
+                    Filter(
+                        Loop,
+                        Index <= Value(ColumnsNum.SelectedText.Value)
+                    ),
+                    Collect(
+                        Blocks,
+                        {
+                            Id: Index + (Value(ColumnsNum.SelectedText.Value) * (CountRows(Iteration) - 1)),
+                            X: Board.X + (BlockWidth * (Index - 1)),
+                            Y: Board.Y+(BlockHeight * (CountRows(Iteration) - 1)),
+                            Width: BlockWidth,
+                            Height: BlockHeight,
+                            Status: 2
+                        }
+                    )
+                )
+            );
+            // Puntuación
+            Set(Score,0);
+            Set(Points,11)
+        Text: ="Botón"
+        Visible: =false
+        X: =40
+        Y: =47
+        ZIndex: =58
+
+    jatomas As image:
+        Height: =201
+        Image: ='Recurso 2'
+        Transparency: =0.5
+        Width: =492
+        X: =436
+        Y: =324
+        ZIndex: =59
+
+    Ball As circle:
+        Fill: =RGBA(210, 203, 203, 1)
+        Height: =20
+        Width: =20
+        X: =BallX
+        Y: =BallY
+        ZIndex: =60
+
+    RestartButton As button:
+        Fill: =ArkDarkGreen
+        Height: =64
+        HoverFill: =ColorFade(ArkDarkGreen, -20%)
+        OnSelect: |-
+            =Select(RestartVariablesButton);
+            Navigate(PlayerSelectorScreen)
+        RadiusBottomLeft: =50
+        RadiusBottomRight: =50
+        RadiusTopLeft: =50
+        RadiusTopRight: =50
+        Text: ="Reiniciar"
+        Visible: =GameWin || GameLost
+        Width: =163
+        X: =1187
+        Y: =10
+        ZIndex: =64
+
+    ScoreTimer As timer:
+        Duration: =30000
+        OnTimerStart: =If (Points > 0, Set(Points, Points - 1))
+        Repeat: =true
+        Start: =StartBallTimer
+        Visible: |
+            =false
+        Y: =55
+        ZIndex: =65
+
+    ScoreLabel As label:
+        Color: =ArkDarkGreen
+        FontWeight: =FontWeight.Semibold
+        Size: =20
+        Text: |-
+            ="Score:"
+        Width: =105
+        X: =25
+        Y: =46
+        ZIndex: =66
+
+    BlockGroup As group:
+        Height: =5
+        Width: =5
+        X: =60
+        Y: =60
+        ZIndex: =66
+
+        Block As rectangle:
+            BorderColor: =RGBA(51, 51, 51, 1)
+            BorderThickness: =2
+            Fill: =If(First(Filter(Blocks, Id=1)).Status = 2, RGBA(89, 196, 120, 100), RGBA(183, 203, 67, 100))
+            Height: =First(Filter(Blocks, Id=1)).Height
+            Visible: =Not(First(Filter(Blocks, Id=1)).Status = 0)
+            Width: =First(Filter(Blocks, Id=1)).Width
+            X: =First(Filter(Blocks, Id=1)).X
+            Y: =First(Filter(Blocks, Id=1)).Y
+            ZIndex: =8
+
+        Block_2 As rectangle:
+            BorderColor: =RGBA(51, 51, 51, 1)
+            BorderThickness: =2
+            Fill: =If(First(Filter(Blocks, Id=2)).Status = 2, RGBA(89, 196, 120, 100), RGBA(183, 203, 67, 100))
+            Height: =First(Filter(Blocks, Id=2)).Height
+            Visible: =Not(First(Filter(Blocks, Id=2)).Status = 0)
+            Width: =First(Filter(Blocks, Id=2)).Width
+            X: =First(Filter(Blocks, Id=2)).X
+            Y: =First(Filter(Blocks, Id=2)).Y
+            ZIndex: =9
+
+        Block_3 As rectangle:
+            BorderColor: =RGBA(51, 51, 51, 1)
+            BorderThickness: =2
+            Fill: =If(First(Filter(Blocks, Id=3)).Status = 2, RGBA(89, 196, 120, 100), RGBA(183, 203, 67, 100))
+            Height: =First(Filter(Blocks, Id=3)).Height
+            Visible: =Not(First(Filter(Blocks, Id=3)).Status = 0)
+            Width: =First(Filter(Blocks, Id=3)).Width
+            X: =First(Filter(Blocks, Id=3)).X
+            Y: =First(Filter(Blocks, Id=3)).Y
+            ZIndex: =10
+
+        Block_4 As rectangle:
+            BorderColor: =RGBA(51, 51, 51, 1)
+            BorderThickness: =2
+            Fill: =If(First(Filter(Blocks, Id=4)).Status = 2, RGBA(89, 196, 120, 100), RGBA(183, 203, 67, 100))
+            Height: =First(Filter(Blocks, Id=4)).Height
+            Visible: =Not(First(Filter(Blocks, Id=4)).Status = 0)
+            Width: =First(Filter(Blocks, Id=4)).Width
+            X: =First(Filter(Blocks, Id=4)).X
+            Y: =First(Filter(Blocks, Id=4)).Y
+            ZIndex: =11
+
+        Block_5 As rectangle:
+            BorderColor: =RGBA(51, 51, 51, 1)
+            BorderThickness: =2
+            Fill: =If(First(Filter(Blocks, Id=5)).Status = 2, RGBA(89, 196, 120, 100), RGBA(183, 203, 67, 100))
+            Height: =First(Filter(Blocks, Id=5)).Height
+            Visible: =Not(First(Filter(Blocks, Id=5)).Status = 0)
+            Width: =First(Filter(Blocks, Id=5)).Width
+            X: =First(Filter(Blocks, Id=5)).X
+            Y: =First(Filter(Blocks, Id=5)).Y
+            ZIndex: =12
+
+        Block_6 As rectangle:
+            BorderColor: =RGBA(51, 51, 51, 1)
+            BorderThickness: =2
+            Fill: =If(First(Filter(Blocks, Id=6)).Status = 2, RGBA(89, 196, 120, 100), RGBA(183, 203, 67, 100))
+            Height: =First(Filter(Blocks, Id=6)).Height
+            Visible: =Not(First(Filter(Blocks, Id=6)).Status = 0)
+            Width: =First(Filter(Blocks, Id=6)).Width
+            X: =First(Filter(Blocks, Id=6)).X
+            Y: =First(Filter(Blocks, Id=6)).Y
+            ZIndex: =13
+
+        Block_7 As rectangle:
+            BorderColor: =RGBA(51, 51, 51, 1)
+            BorderThickness: =2
+            Fill: =If(First(Filter(Blocks, Id=7)).Status = 2, RGBA(89, 196, 120, 100), RGBA(183, 203, 67, 100))
+            Height: =First(Filter(Blocks, Id=7)).Height
+            Visible: =Not(First(Filter(Blocks, Id=7)).Status = 0)
+            Width: =First(Filter(Blocks, Id=7)).Width
+            X: =First(Filter(Blocks, Id=7)).X
+            Y: =First(Filter(Blocks, Id=7)).Y
+            ZIndex: =14
+
+        Block_8 As rectangle:
+            BorderColor: =RGBA(51, 51, 51, 1)
+            BorderThickness: =2
+            Fill: =If(First(Filter(Blocks, Id=8)).Status = 2, RGBA(89, 196, 120, 100), RGBA(183, 203, 67, 100))
+            Height: =First(Filter(Blocks, Id=8)).Height
+            Visible: =Not(First(Filter(Blocks, Id=8)).Status = 0)
+            Width: =First(Filter(Blocks, Id=8)).Width
+            X: =First(Filter(Blocks, Id=8)).X
+            Y: =First(Filter(Blocks, Id=8)).Y
+            ZIndex: =15
+
+        Block_9 As rectangle:
+            BorderColor: =RGBA(51, 51, 51, 1)
+            BorderThickness: =2
+            Fill: =If(First(Filter(Blocks, Id=9)).Status = 2, RGBA(89, 196, 120, 100), RGBA(183, 203, 67, 100))
+            Height: =First(Filter(Blocks, Id=9)).Height
+            Visible: =Not(First(Filter(Blocks, Id=9)).Status = 0)
+            Width: =First(Filter(Blocks, Id=9)).Width
+            X: =First(Filter(Blocks, Id=9)).X
+            Y: =First(Filter(Blocks, Id=9)).Y
+            ZIndex: =16
+
+        Block_10 As rectangle:
+            BorderColor: =RGBA(51, 51, 51, 1)
+            BorderThickness: =2
+            Fill: =If(First(Filter(Blocks, Id=10)).Status = 2, RGBA(89, 196, 120, 100), RGBA(183, 203, 67, 100))
+            Height: =First(Filter(Blocks, Id=10)).Height
+            Visible: =Not(First(Filter(Blocks, Id=10)).Status = 0)
+            Width: =First(Filter(Blocks, Id=10)).Width
+            X: =First(Filter(Blocks, Id=10)).X
+            Y: =First(Filter(Blocks, Id=10)).Y
+            ZIndex: =17
+
+        Block_11 As rectangle:
+            BorderColor: =RGBA(51, 51, 51, 1)
+            BorderThickness: =2
+            Fill: =If(First(Filter(Blocks, Id=11)).Status = 2, RGBA(89, 196, 120, 100), RGBA(183, 203, 67, 100))
+            Height: =First(Filter(Blocks, Id=11)).Height
+            Visible: =Not(First(Filter(Blocks, Id=11)).Status = 0)
+            Width: =First(Filter(Blocks, Id=11)).Width
+            X: =First(Filter(Blocks, Id=11)).X
+            Y: =First(Filter(Blocks, Id=11)).Y
+            ZIndex: =18
+
+        Block_12 As rectangle:
+            BorderColor: =RGBA(51, 51, 51, 1)
+            BorderThickness: =2
+            Fill: =If(First(Filter(Blocks, Id=12)).Status = 2, RGBA(89, 196, 120, 100), RGBA(183, 203, 67, 100))
+            Height: =First(Filter(Blocks, Id=12)).Height
+            Visible: =Not(First(Filter(Blocks, Id=12)).Status = 0)
+            Width: =First(Filter(Blocks, Id=12)).Width
+            X: =First(Filter(Blocks, Id=12)).X
+            Y: =First(Filter(Blocks, Id=12)).Y
+            ZIndex: =19
+
+        Block_13 As rectangle:
+            BorderColor: =RGBA(51, 51, 51, 1)
+            BorderThickness: =2
+            Fill: =If(First(Filter(Blocks, Id=13)).Status = 2, RGBA(89, 196, 120, 100), RGBA(183, 203, 67, 100))
+            Height: =First(Filter(Blocks, Id=13)).Height
+            Visible: =Not(First(Filter(Blocks, Id=13)).Status = 0)
+            Width: =First(Filter(Blocks, Id=13)).Width
+            X: =First(Filter(Blocks, Id=13)).X
+            Y: =First(Filter(Blocks, Id=13)).Y
+            ZIndex: =20
+
+        Block_14 As rectangle:
+            BorderColor: =RGBA(51, 51, 51, 1)
+            BorderThickness: =2
+            Fill: =If(First(Filter(Blocks, Id=14)).Status = 2, RGBA(89, 196, 120, 100), RGBA(183, 203, 67, 100))
+            Height: =First(Filter(Blocks, Id=14)).Height
+            Visible: =Not(First(Filter(Blocks, Id=14)).Status = 0)
+            Width: =First(Filter(Blocks, Id=14)).Width
+            X: =First(Filter(Blocks, Id=14)).X
+            Y: =First(Filter(Blocks, Id=14)).Y
+            ZIndex: =21
+
+        Block_15 As rectangle:
+            BorderColor: =RGBA(51, 51, 51, 1)
+            BorderThickness: =2
+            Fill: =If(First(Filter(Blocks, Id=15)).Status = 2, RGBA(89, 196, 120, 100), RGBA(183, 203, 67, 100))
+            Height: =First(Filter(Blocks, Id=15)).Height
+            Visible: =Not(First(Filter(Blocks, Id=15)).Status = 0)
+            Width: =First(Filter(Blocks, Id=15)).Width
+            X: =First(Filter(Blocks, Id=15)).X
+            Y: =First(Filter(Blocks, Id=15)).Y
+            ZIndex: =22
+
+        Block_16 As rectangle:
+            BorderColor: =RGBA(51, 51, 51, 1)
+            BorderThickness: =2
+            Fill: =If(First(Filter(Blocks, Id=16)).Status = 2, RGBA(89, 196, 120, 100), RGBA(183, 203, 67, 100))
+            Height: =First(Filter(Blocks, Id=16)).Height
+            Visible: =Not(First(Filter(Blocks, Id=16)).Status = 0)
+            Width: =First(Filter(Blocks, Id=16)).Width
+            X: =First(Filter(Blocks, Id=16)).X
+            Y: =First(Filter(Blocks, Id=16)).Y
+            ZIndex: =23
+
+        Block_17 As rectangle:
+            BorderColor: =RGBA(51, 51, 51, 1)
+            BorderThickness: =2
+            Fill: =If(First(Filter(Blocks, Id=17)).Status = 2, RGBA(89, 196, 120, 100), RGBA(183, 203, 67, 100))
+            Height: =First(Filter(Blocks, Id=17)).Height
+            Visible: =Not(First(Filter(Blocks, Id=17)).Status = 0)
+            Width: =First(Filter(Blocks, Id=17)).Width
+            X: =First(Filter(Blocks, Id=17)).X
+            Y: =First(Filter(Blocks, Id=17)).Y
+            ZIndex: =24
+
+        Block_18 As rectangle:
+            BorderColor: =RGBA(51, 51, 51, 1)
+            BorderThickness: =2
+            Fill: =If(First(Filter(Blocks, Id=18)).Status = 2, RGBA(89, 196, 120, 100), RGBA(183, 203, 67, 100))
+            Height: =First(Filter(Blocks, Id=18)).Height
+            Visible: =Not(First(Filter(Blocks, Id=18)).Status = 0)
+            Width: =First(Filter(Blocks, Id=18)).Width
+            X: =First(Filter(Blocks, Id=18)).X
+            Y: =First(Filter(Blocks, Id=18)).Y
+            ZIndex: =25
+
+        Block_19 As rectangle:
+            BorderColor: =RGBA(51, 51, 51, 1)
+            BorderThickness: =2
+            Fill: =If(First(Filter(Blocks, Id=19)).Status = 2, RGBA(89, 196, 120, 100), RGBA(183, 203, 67, 100))
+            Height: =First(Filter(Blocks, Id=19)).Height
+            Visible: =Not(First(Filter(Blocks, Id=19)).Status = 0)
+            Width: =First(Filter(Blocks, Id=19)).Width
+            X: =First(Filter(Blocks, Id=19)).X
+            Y: =First(Filter(Blocks, Id=19)).Y
+            ZIndex: =26
+
+        Block_20 As rectangle:
+            BorderColor: =RGBA(51, 51, 51, 1)
+            BorderThickness: =2
+            Fill: =If(First(Filter(Blocks, Id=20)).Status = 2, RGBA(89, 196, 120, 100), RGBA(183, 203, 67, 100))
+            Height: =First(Filter(Blocks, Id=20)).Height
+            Visible: =Not(First(Filter(Blocks, Id=20)).Status = 0)
+            Width: =First(Filter(Blocks, Id=20)).Width
+            X: =First(Filter(Blocks, Id=20)).X
+            Y: =First(Filter(Blocks, Id=20)).Y
+            ZIndex: =27
+
+        Block_21 As rectangle:
+            BorderColor: =RGBA(51, 51, 51, 1)
+            BorderThickness: =2
+            Fill: =If(First(Filter(Blocks, Id=21)).Status = 2, RGBA(89, 196, 120, 100), RGBA(183, 203, 67, 100))
+            Height: =First(Filter(Blocks, Id=21)).Height
+            Visible: =Not(First(Filter(Blocks, Id=21)).Status = 0)
+            Width: =First(Filter(Blocks, Id=21)).Width
+            X: =First(Filter(Blocks, Id=21)).X
+            Y: =First(Filter(Blocks, Id=21)).Y
+            ZIndex: =28
+
+        Block_22 As rectangle:
+            BorderColor: =RGBA(51, 51, 51, 1)
+            BorderThickness: =2
+            Fill: =If(First(Filter(Blocks, Id=22)).Status = 2, RGBA(89, 196, 120, 100), RGBA(183, 203, 67, 100))
+            Height: =First(Filter(Blocks, Id=22)).Height
+            Visible: =Not(First(Filter(Blocks, Id=22)).Status = 0)
+            Width: =First(Filter(Blocks, Id=22)).Width
+            X: =First(Filter(Blocks, Id=22)).X
+            Y: =First(Filter(Blocks, Id=22)).Y
+            ZIndex: =29
+
+        Block_23 As rectangle:
+            BorderColor: =RGBA(51, 51, 51, 1)
+            BorderThickness: =2
+            Fill: =If(First(Filter(Blocks, Id=23)).Status = 2, RGBA(89, 196, 120, 100), RGBA(183, 203, 67, 100))
+            Height: =First(Filter(Blocks, Id=23)).Height
+            Visible: =Not(First(Filter(Blocks, Id=23)).Status = 0)
+            Width: =First(Filter(Blocks, Id=23)).Width
+            X: =First(Filter(Blocks, Id=23)).X
+            Y: =First(Filter(Blocks, Id=23)).Y
+            ZIndex: =30
+
+        Block_24 As rectangle:
+            BorderColor: =RGBA(51, 51, 51, 1)
+            BorderThickness: =2
+            Fill: =If(First(Filter(Blocks, Id=24)).Status = 2, RGBA(89, 196, 120, 100), RGBA(183, 203, 67, 100))
+            Height: =First(Filter(Blocks, Id=24)).Height
+            Visible: =Not(First(Filter(Blocks, Id=24)).Status = 0)
+            Width: =First(Filter(Blocks, Id=24)).Width
+            X: =First(Filter(Blocks, Id=24)).X
+            Y: =First(Filter(Blocks, Id=24)).Y
+            ZIndex: =31
+
+        Block_25 As rectangle:
+            BorderColor: =RGBA(51, 51, 51, 1)
+            BorderThickness: =2
+            Fill: =If(First(Filter(Blocks, Id=25)).Status = 2, RGBA(89, 196, 120, 100), RGBA(183, 203, 67, 100))
+            Height: =First(Filter(Blocks, Id=25)).Height
+            Visible: =Not(First(Filter(Blocks, Id=25)).Status = 0)
+            Width: =First(Filter(Blocks, Id=25)).Width
+            X: =First(Filter(Blocks, Id=25)).X
+            Y: =First(Filter(Blocks, Id=25)).Y
+            ZIndex: =32
+
+        Block_26 As rectangle:
+            BorderColor: =RGBA(51, 51, 51, 1)
+            BorderThickness: =2
+            Fill: =If(First(Filter(Blocks, Id=26)).Status = 2, RGBA(89, 196, 120, 100), RGBA(183, 203, 67, 100))
+            Height: =First(Filter(Blocks, Id=26)).Height
+            Visible: =Not(First(Filter(Blocks, Id=26)).Status = 0)
+            Width: =First(Filter(Blocks, Id=26)).Width
+            X: =First(Filter(Blocks, Id=26)).X
+            Y: =First(Filter(Blocks, Id=26)).Y
+            ZIndex: =33
+
+        Block_27 As rectangle:
+            BorderColor: =RGBA(51, 51, 51, 1)
+            BorderThickness: =2
+            Fill: =If(First(Filter(Blocks, Id=27)).Status = 2, RGBA(89, 196, 120, 100), RGBA(183, 203, 67, 100))
+            Height: =First(Filter(Blocks, Id=27)).Height
+            Visible: =Not(First(Filter(Blocks, Id=27)).Status = 0)
+            Width: =First(Filter(Blocks, Id=27)).Width
+            X: =First(Filter(Blocks, Id=27)).X
+            Y: =First(Filter(Blocks, Id=27)).Y
+            ZIndex: =34
+
+        Block_28 As rectangle:
+            BorderColor: =RGBA(51, 51, 51, 1)
+            BorderThickness: =2
+            Fill: =If(First(Filter(Blocks, Id=28)).Status = 2, RGBA(89, 196, 120, 100), RGBA(183, 203, 67, 100))
+            Height: =First(Filter(Blocks, Id=28)).Height
+            Visible: =Not(First(Filter(Blocks, Id=28)).Status = 0)
+            Width: =First(Filter(Blocks, Id=28)).Width
+            X: =First(Filter(Blocks, Id=28)).X
+            Y: =First(Filter(Blocks, Id=28)).Y
+            ZIndex: =35
+
+        Block_29 As rectangle:
+            BorderColor: =RGBA(51, 51, 51, 1)
+            BorderThickness: =2
+            Fill: =If(First(Filter(Blocks, Id=29)).Status = 2, RGBA(89, 196, 120, 100), RGBA(183, 203, 67, 100))
+            Height: =First(Filter(Blocks, Id=29)).Height
+            Visible: =Not(First(Filter(Blocks, Id=29)).Status = 0)
+            Width: =First(Filter(Blocks, Id=29)).Width
+            X: =First(Filter(Blocks, Id=29)).X
+            Y: =First(Filter(Blocks, Id=29)).Y
+            ZIndex: =36
+
+        Block_30 As rectangle:
+            BorderColor: =RGBA(51, 51, 51, 1)
+            BorderThickness: =2
+            Fill: =If(First(Filter(Blocks, Id=30)).Status = 2, RGBA(89, 196, 120, 100), RGBA(183, 203, 67, 100))
+            Height: =First(Filter(Blocks, Id=30)).Height
+            Visible: =Not(First(Filter(Blocks, Id=30)).Status = 0)
+            Width: =First(Filter(Blocks, Id=30)).Width
+            X: =First(Filter(Blocks, Id=30)).X
+            Y: =First(Filter(Blocks, Id=30)).Y
+            ZIndex: =37
+
+        Block_31 As rectangle:
+            BorderColor: =RGBA(51, 51, 51, 1)
+            BorderThickness: =2
+            Fill: =If(First(Filter(Blocks, Id=31)).Status = 2, RGBA(89, 196, 120, 100), RGBA(183, 203, 67, 100))
+            Height: =First(Filter(Blocks, Id=31)).Height
+            Visible: =Not(First(Filter(Blocks, Id=31)).Status = 0)
+            Width: =First(Filter(Blocks, Id=31)).Width
+            X: =First(Filter(Blocks, Id=31)).X
+            Y: =First(Filter(Blocks, Id=31)).Y
+            ZIndex: =38
+
+        Block_32 As rectangle:
+            BorderColor: =RGBA(51, 51, 51, 1)
+            BorderThickness: =2
+            Fill: =If(First(Filter(Blocks, Id=32)).Status = 2, RGBA(89, 196, 120, 100), RGBA(183, 203, 67, 100))
+            Height: =First(Filter(Blocks, Id=32)).Height
+            Visible: =Not(First(Filter(Blocks, Id=32)).Status = 0)
+            Width: =First(Filter(Blocks, Id=32)).Width
+            X: =First(Filter(Blocks, Id=32)).X
+            Y: =First(Filter(Blocks, Id=32)).Y
+            ZIndex: =39
+
+        Block_33 As rectangle:
+            BorderColor: =RGBA(51, 51, 51, 1)
+            BorderThickness: =2
+            Fill: =If(First(Filter(Blocks, Id=33)).Status = 2, RGBA(89, 196, 120, 100), RGBA(183, 203, 67, 100))
+            Height: =First(Filter(Blocks, Id=33)).Height
+            Visible: =Not(First(Filter(Blocks, Id=33)).Status = 0)
+            Width: =First(Filter(Blocks, Id=33)).Width
+            X: =First(Filter(Blocks, Id=33)).X
+            Y: =First(Filter(Blocks, Id=33)).Y
+            ZIndex: =40
+
+        Block_34 As rectangle:
+            BorderColor: =RGBA(51, 51, 51, 1)
+            BorderThickness: =2
+            Fill: =If(First(Filter(Blocks, Id=34)).Status = 2, RGBA(89, 196, 120, 100), RGBA(183, 203, 67, 100))
+            Height: =First(Filter(Blocks, Id=34)).Height
+            Visible: =Not(First(Filter(Blocks, Id=34)).Status = 0)
+            Width: =First(Filter(Blocks, Id=34)).Width
+            X: =First(Filter(Blocks, Id=34)).X
+            Y: =First(Filter(Blocks, Id=34)).Y
+            ZIndex: =41
+
+        Block_35 As rectangle:
+            BorderColor: =RGBA(51, 51, 51, 1)
+            BorderThickness: =2
+            Fill: =If(First(Filter(Blocks, Id=35)).Status = 2, RGBA(89, 196, 120, 100), RGBA(183, 203, 67, 100))
+            Height: =First(Filter(Blocks, Id=35)).Height
+            Visible: =Not(First(Filter(Blocks, Id=35)).Status = 0)
+            Width: =First(Filter(Blocks, Id=35)).Width
+            X: =First(Filter(Blocks, Id=35)).X
+            Y: =First(Filter(Blocks, Id=35)).Y
+            ZIndex: =42
+
+        Block_36 As rectangle:
+            BorderColor: =RGBA(51, 51, 51, 1)
+            BorderThickness: =2
+            Fill: =If(First(Filter(Blocks, Id=36)).Status = 2, RGBA(89, 196, 120, 100), RGBA(183, 203, 67, 100))
+            Height: =First(Filter(Blocks, Id=36)).Height
+            Visible: =Not(First(Filter(Blocks, Id=36)).Status = 0)
+            Width: =First(Filter(Blocks, Id=36)).Width
+            X: =First(Filter(Blocks, Id=36)).X
+            Y: =First(Filter(Blocks, Id=36)).Y
+            ZIndex: =43
+
+        Block_37 As rectangle:
+            BorderColor: =RGBA(51, 51, 51, 1)
+            BorderThickness: =2
+            Fill: =If(First(Filter(Blocks, Id=37)).Status = 2, RGBA(89, 196, 120, 100), RGBA(183, 203, 67, 100))
+            Height: =First(Filter(Blocks, Id=37)).Height
+            Visible: =Not(First(Filter(Blocks, Id=37)).Status = 0)
+            Width: =First(Filter(Blocks, Id=37)).Width
+            X: =First(Filter(Blocks, Id=37)).X
+            Y: =First(Filter(Blocks, Id=37)).Y
+            ZIndex: =44
+
+        Block_38 As rectangle:
+            BorderColor: =RGBA(51, 51, 51, 1)
+            BorderThickness: =2
+            Fill: =If(First(Filter(Blocks, Id=38)).Status = 2, RGBA(89, 196, 120, 100), RGBA(183, 203, 67, 100))
+            Height: =First(Filter(Blocks, Id=38)).Height
+            Visible: =Not(First(Filter(Blocks, Id=38)).Status = 0)
+            Width: =First(Filter(Blocks, Id=38)).Width
+            X: =First(Filter(Blocks, Id=38)).X
+            Y: =First(Filter(Blocks, Id=38)).Y
+            ZIndex: =45
+
+        Block_39 As rectangle:
+            BorderColor: =RGBA(51, 51, 51, 1)
+            BorderThickness: =2
+            Fill: =If(First(Filter(Blocks, Id=39)).Status = 2, RGBA(89, 196, 120, 100), RGBA(183, 203, 67, 100))
+            Height: =First(Filter(Blocks, Id=39)).Height
+            Visible: =Not(First(Filter(Blocks, Id=39)).Status = 0)
+            Width: =First(Filter(Blocks, Id=39)).Width
+            X: =First(Filter(Blocks, Id=39)).X
+            Y: =First(Filter(Blocks, Id=39)).Y
+            ZIndex: =46
+
+        Block_40 As rectangle:
+            BorderColor: =RGBA(51, 51, 51, 1)
+            BorderThickness: =2
+            Fill: =If(First(Filter(Blocks, Id=40)).Status = 2, RGBA(89, 196, 120, 100), RGBA(183, 203, 67, 100))
+            Height: =First(Filter(Blocks, Id=40)).Height
+            Visible: =Not(First(Filter(Blocks, Id=40)).Status = 0)
+            Width: =First(Filter(Blocks, Id=40)).Width
+            X: =First(Filter(Blocks, Id=40)).X
+            Y: =First(Filter(Blocks, Id=40)).Y
+            ZIndex: =47
+
+        Block_41 As rectangle:
+            BorderColor: =RGBA(51, 51, 51, 1)
+            BorderThickness: =2
+            Fill: =If(First(Filter(Blocks, Id=41)).Status = 2, RGBA(89, 196, 120, 100), RGBA(183, 203, 67, 100))
+            Height: =First(Filter(Blocks, Id=41)).Height
+            Visible: =Not(First(Filter(Blocks, Id=41)).Status = 0)
+            Width: =First(Filter(Blocks, Id=41)).Width
+            X: =First(Filter(Blocks, Id=41)).X
+            Y: =First(Filter(Blocks, Id=41)).Y
+            ZIndex: =48
+
+        Block_42 As rectangle:
+            BorderColor: =RGBA(51, 51, 51, 1)
+            BorderThickness: =2
+            Fill: =If(First(Filter(Blocks, Id=42)).Status = 2, RGBA(89, 196, 120, 100), RGBA(183, 203, 67, 100))
+            Height: =First(Filter(Blocks, Id=42)).Height
+            Visible: =Not(First(Filter(Blocks, Id=42)).Status = 0)
+            Width: =First(Filter(Blocks, Id=42)).Width
+            X: =First(Filter(Blocks, Id=42)).X
+            Y: =First(Filter(Blocks, Id=42)).Y
+            ZIndex: =49
+
+        Block_43 As rectangle:
+            BorderColor: =RGBA(51, 51, 51, 1)
+            BorderThickness: =2
+            Fill: =If(First(Filter(Blocks, Id=43)).Status = 2, RGBA(89, 196, 120, 100), RGBA(183, 203, 67, 100))
+            Height: =First(Filter(Blocks, Id=43)).Height
+            Visible: =Not(First(Filter(Blocks, Id=43)).Status = 0)
+            Width: =First(Filter(Blocks, Id=43)).Width
+            X: =First(Filter(Blocks, Id=43)).X
+            Y: =First(Filter(Blocks, Id=43)).Y
+            ZIndex: =50
+
+        Block_44 As rectangle:
+            BorderColor: =RGBA(51, 51, 51, 1)
+            BorderThickness: =2
+            Fill: =If(First(Filter(Blocks, Id=44)).Status = 2, RGBA(89, 196, 120, 100), RGBA(183, 203, 67, 100))
+            Height: =First(Filter(Blocks, Id=44)).Height
+            Visible: =Not(First(Filter(Blocks, Id=44)).Status = 0)
+            Width: =First(Filter(Blocks, Id=44)).Width
+            X: =First(Filter(Blocks, Id=44)).X
+            Y: =First(Filter(Blocks, Id=44)).Y
+            ZIndex: =51
+
+        Block_45 As rectangle:
+            BorderColor: =RGBA(51, 51, 51, 1)
+            BorderThickness: =2
+            Fill: =If(First(Filter(Blocks, Id=45)).Status = 2, RGBA(89, 196, 120, 100), RGBA(183, 203, 67, 100))
+            Height: =First(Filter(Blocks, Id=45)).Height
+            Visible: =Not(First(Filter(Blocks, Id=45)).Status = 0)
+            Width: =First(Filter(Blocks, Id=45)).Width
+            X: =First(Filter(Blocks, Id=45)).X
+            Y: =First(Filter(Blocks, Id=45)).Y
+            ZIndex: =52
+
+        Block_46 As rectangle:
+            BorderColor: =RGBA(51, 51, 51, 1)
+            BorderThickness: =2
+            Fill: =If(First(Filter(Blocks, Id=46)).Status = 2, RGBA(89, 196, 120, 100), RGBA(183, 203, 67, 100))
+            Height: =First(Filter(Blocks, Id=46)).Height
+            Visible: =Not(First(Filter(Blocks, Id=46)).Status = 0)
+            Width: =First(Filter(Blocks, Id=46)).Width
+            X: =First(Filter(Blocks, Id=46)).X
+            Y: =First(Filter(Blocks, Id=46)).Y
+            ZIndex: =53
+
+        Block_47 As rectangle:
+            BorderColor: =RGBA(51, 51, 51, 1)
+            BorderThickness: =2
+            Fill: =If(First(Filter(Blocks, Id=47)).Status = 2, RGBA(89, 196, 120, 100), RGBA(183, 203, 67, 100))
+            Height: =First(Filter(Blocks, Id=47)).Height
+            Visible: =Not(First(Filter(Blocks, Id=47)).Status = 0)
+            Width: =First(Filter(Blocks, Id=47)).Width
+            X: =First(Filter(Blocks, Id=47)).X
+            Y: =First(Filter(Blocks, Id=47)).Y
+            ZIndex: =54
+
+        Block_48 As rectangle:
+            BorderColor: =RGBA(51, 51, 51, 1)
+            BorderThickness: =2
+            Fill: =If(First(Filter(Blocks, Id=48)).Status = 2, RGBA(89, 196, 120, 100), RGBA(183, 203, 67, 100))
+            Height: =First(Filter(Blocks, Id=48)).Height
+            Visible: =Not(First(Filter(Blocks, Id=48)).Status = 0)
+            Width: =First(Filter(Blocks, Id=48)).Width
+            X: =First(Filter(Blocks, Id=48)).X
+            Y: =First(Filter(Blocks, Id=48)).Y
+            ZIndex: =55
+
+        Block_49 As rectangle:
+            BorderColor: =RGBA(51, 51, 51, 1)
+            BorderThickness: =2
+            Fill: =If(First(Filter(Blocks, Id=49)).Status = 2, RGBA(89, 196, 120, 100), RGBA(183, 203, 67, 100))
+            Height: =First(Filter(Blocks, Id=49)).Height
+            Visible: =Not(First(Filter(Blocks, Id=49)).Status = 0)
+            Width: =First(Filter(Blocks, Id=49)).Width
+            X: =First(Filter(Blocks, Id=49)).X
+            Y: =First(Filter(Blocks, Id=49)).Y
+            ZIndex: =56
+
+        Block_50 As rectangle:
+            BorderColor: =RGBA(51, 51, 51, 1)
+            BorderThickness: =2
+            Fill: =If(First(Filter(Blocks, Id=50)).Status = 2, RGBA(89, 196, 120, 100), RGBA(183, 203, 67, 100))
+            Height: =First(Filter(Blocks, Id=50)).Height
+            Visible: =Not(First(Filter(Blocks, Id=50)).Status = 0)
+            Width: =First(Filter(Blocks, Id=50)).Width
+            X: =First(Filter(Blocks, Id=50)).X
+            Y: =First(Filter(Blocks, Id=50)).Y
+            ZIndex: =57
+
+    ScoreValue As label:
+        Color: =ArkDarkGreen
+        FontWeight: =FontWeight.Semibold
+        Size: =20
+        Text: =Score
+        Width: =105
+        X: =121
+        Y: =46
+        ZIndex: =67
+
+    PlayerLabel As label:
+        Color: =ArkDarkGreen
+        FontWeight: =FontWeight.Semibold
+        Size: =20
+        Text: |-
+            ="Player:"
+        Width: =105
+        X: =14
+        Y: =12
+        ZIndex: =68
+
+    PlayerValue As label:
+        Color: =ArkDarkGreen
+        FontWeight: =FontWeight.Semibold
+        Height: =45
+        Size: =20
+        Text: =PlayerName
+        Width: =180
+        X: =121
+        Y: =10
+        ZIndex: =69
+
